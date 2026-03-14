@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main">
+    <div class="page-header">
+        <h1>🔖 Revision</h1>
+        <p>Questions marked for revision</p>
+    </div>
+
+    {% if categories %}
+    <div class="cards-grid">
+        {% for c in categories %}
+        <a href="/revision/{{ c.name }}" class="s-card"
+           style="border-top: 3px solid {{ c.colors.accent }}">
+            <div class="s-card-emoji">{{ c.colors.emoji }}</div>
+            <div class="s-card-name">{{ c.name }} Aptitude</div>
+            <div class="badges">
+                <span class="badge badge-amber">⚑ {{ c.count }} questions</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <div class="e-icon">🔖</div>
+        <p>No questions marked for revision yet.<br>
+           Check the Revision box on any question to add it here.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
