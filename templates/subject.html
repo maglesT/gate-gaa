@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> › <span>{{ category }}</span>
+    </div>
+
+    <div class="page-header">
+        <h1>{{ colors.emoji }} {{ category }} Aptitude</h1>
+        <p>{{ topics | length }} topics · {{ topics | sum(attribute='total') }} questions</p>
+    </div>
+
+    {% set tq = topics | sum(attribute='total') %}
+    {% set ts = topics | sum(attribute='solved') %}
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-num">{{ tq }}</div><div class="stat-lbl">Questions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:#10B981">{{ ts }}</div><div class="stat-lbl">Solved</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:#F59E0B">{{ topics | sum(attribute='revision') }}</div>
+            <div class="stat-lbl">Revision</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:{{ colors.accent }}">
+                {{ ((ts / tq) * 100) | round | int if tq else 0 }}%
+            </div>
+            <div class="stat-lbl">Done</div>
+        </div>
+    </div>
+
+    <div class="cards-grid">
+        {% for t in topics %}
+        <a href="/topic/{{ category }}/{{ t.name }}" class="s-card">
+            <div class="s-card-name">{{ t.name }}</div>
+            <div class="s-card-meta">{{ t.total }} questions</div>
+            <div class="badges">
+                <span class="badge badge-green">✓ {{ t.solved }}</span>
+                <span class="badge badge-gray">{{ t.total - t.solved }} left</span>
+                {% if t.revision %}
+                <span class="badge badge-amber">⚑ {{ t.revision }}</span>
+                {% endif %}
+            </div>
+            <div class="prog-wrap">
+                <div class="prog-label">
+                    <span>{{ t.pct }}%</span>
+                    <strong>{{ t.solved }}/{{ t.total }}</strong>
+                </div>
+                <div class="prog-bar">
+                    <div class="prog-fill"
+                         style="width:{{ t.pct }}%; background:{{ colors.accent }}">
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
