@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main">
+    {% set tq = categories | sum(attribute='total') %}
+    {% set ts = categories | sum(attribute='solved') %}
+    {% set tr = categories | sum(attribute='revision') %}
+
+    <div class="page-header">
+        <h1>📊 Dashboard</h1>
+        <p>Welcome back, {{ session.user | capitalize }}!</p>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-num">{{ tq }}</div>
+            <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:#10B981">{{ ts }}</div>
+            <div class="stat-lbl">Solved</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:#F59E0B">{{ tr }}</div>
+            <div class="stat-lbl">Revision</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" style="color:#4F46E5">
+                {{ ((ts / tq) * 100) | round | int if tq else 0 }}%
+            </div>
+            <div class="stat-lbl">Progress</div>
+        </div>
+    </div>
+
+    <div class="cards-grid">
+        {% for c in categories %}
+        <a href="/subject/{{ c.name }}" class="s-card"
+           style="border-top: 3px solid {{ c.colors.accent }}">
+            <div class="s-card-emoji">{{ c.colors.emoji }}</div>
+            <div class="s-card-name">{{ c.name }} Aptitude</div>
+            <div class="s-card-meta">{{ c.total }} questions</div>
+            <div class="badges">
+                <span class="badge badge-green">✓ {{ c.solved }} solved</span>
+                {% if c.revision %}
+                <span class="badge badge-amber">⚑ {{ c.revision }} revision</span>
+                {% endif %}
+            </div>
+            <div class="prog-wrap">
+                <div class="prog-label">
+                    <span>Progress</span>
+                    <strong>{{ c.pct }}%</strong>
+                </div>
+                <div class="prog-bar">
+                    <div class="prog-fill"
+                         style="width:{{ c.pct }}%; background:{{ c.colors.accent }}">
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
