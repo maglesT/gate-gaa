@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> ›
+        <a href="/subject/{{ category }}">{{ category }}</a> ›
+        <span>{{ topic }}</span>
+    </div>
+
+    <div class="page-header">
+        <h1>{{ topic }}</h1>
+        <p>{{ questions | length }} questions</p>
+    </div>
+
+    <div class="filter-bar">
+        <input type="text" id="searchInput"
+               placeholder="🔍  Search questions..."
+               oninput="filterCards()">
+        <button class="filter-btn active" id="btn-all"      onclick="setFilter('all')">All</button>
+        <button class="filter-btn"        id="btn-unsolved" onclick="setFilter('unsolved')">Unsolved</button>
+        <button class="filter-btn"        id="btn-solved"   onclick="setFilter('solved')">✓ Solved</button>
+        <button class="filter-btn"        id="btn-revision" onclick="setFilter('revision')">⚑ Revision</button>
+        <span class="q-count" id="qCount">{{ questions | length }} shown</span>
+    </div>
+
+    <div class="q-grid" id="qGrid">
+        {% for q in questions %}
+        <div class="q-card
+                    {% if q.solved %}is-solved{% endif %}
+                    {% if q.revision %}is-revision{% endif %}"
+             id="qcard-{{ q.id }}"
+             data-solved="{{ q.solved }}"
+             data-revision="{{ q.revision }}"
+             data-title="{{ q.title | lower }}">
+
+            <div class="q-title">{{ q.title }}</div>
+
+            <div class="q-footer">
+                <div class="q-checks">
+                    <label class="q-check solved-check">
+                        <input type="checkbox"
+                               {% if q.solved %}checked{% endif %}
+                               onchange="toggle('{{ q.id }}', 'solved', this)">
+                        Solved
+                    </label>
+                    <label class="q-check rev-check">
+                        <input type="checkbox"
+                               {% if q.revision %}checked{% endif %}
+                               onchange="toggle('{{ q.id }}', 'revision', this)">
+                        Revision
+                    </label>
+                </div>
+                <a href="{{ q.url }}" target="_blank" class="q-link">↗ GO</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilter = 'all';
+
+function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn')
+            .forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + f).classList.add('active');
+    filterCards();
+}
+
+function filterCards() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('.q-card').forEach(card => {
+        const matchSearch = !q || card.dataset.title.includes(q);
+        const solved      = card.dataset.solved   === '1';
+        const revision    = card.dataset.revision === '1';
+        let   matchFilter = true;
+        if (currentFilter === 'solved')   matchFilter = solved;
+        if (currentFilter === 'unsolved') matchFilter = !solved;
+        if (currentFilter === 'revision') matchFilter = revision;
+        const visible = matchSearch && matchFilter;
+        card.style.display = visible ? '' : 'none';
+        if (visible) shown++;
+    });
+    document.getElementById('qCount').textContent = shown + ' shown';
+}
+</script>
+{% endblock %}
