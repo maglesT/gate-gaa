@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE GA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+{% if session.user %}
+<nav class="navbar">
+    <a href="/dashboard" class="nav-brand">GATE <span>GA</span></a>
+    <div class="nav-right">
+        <a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">📊 Dashboard</a>
+        <a href="/revision"  class="nav-link {% if 'revision' in request.endpoint %}active{% endif %}">🔖 Revision</a>
+        <span class="nav-pill">{{ session.user | capitalize }}</span>
+        <a href="/logout" class="nav-link danger">↩ Switch</a>
+    </div>
+</nav>
+{% endif %}
+{% block content %}{% endblock %}
+<div class="toast" id="toast"></div>
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
