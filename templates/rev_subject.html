@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="main">
+    <div class="breadcrumb">
+        <a href="/revision">Revision</a> › <span>{{ category }}</span>
+    </div>
+    <div class="page-header">
+        <h1>{{ colors.emoji }} {{ category }} — Revision</h1>
+    </div>
+    <div class="cards-grid">
+        {% for t in topics %}
+        <a href="/revision/{{ category }}/{{ t.name }}" class="s-card">
+            <div class="s-card-name">{{ t.name }}</div>
+            <div class="badges">
+                <span class="badge badge-amber">⚑ {{ t.count }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
