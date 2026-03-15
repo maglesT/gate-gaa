@@ -1,6 +1,7 @@
 from flask import (Flask, render_template, request,
-                   jsonify, session, redirect, url_for)
-import sqlite3
+                   jsonify, session, redirect, url_for, Response)
+import sqlite3, json
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "gate_ga_2026"
@@ -15,7 +16,6 @@ COLORS = {
     "Analytical":   {"accent":"#EA580C", "bg":"#FFF7ED", "emoji":"🧠"},
 }
 
-# ── DB helper ─────────────────────────────────────────────────
 def db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -24,7 +24,6 @@ def db():
 def get_user():
     return session.get("user")
 
-# ── Auth ──────────────────────────────────────────────────────
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -40,7 +39,6 @@ def logout():
     session.pop("user", None)
     return redirect(url_for("home"))
 
-# ── Dashboard ─────────────────────────────────────────────────
 @app.route("/dashboard")
 def dashboard():
     u = get_user()
@@ -73,7 +71,6 @@ def dashboard():
     conn.close()
     return render_template("dashboard.html", categories=cats)
 
-# ── Subject → topic list ──────────────────────────────────────
 @app.route("/subject/<cat>")
 def subject(cat):
     u = get_user()
@@ -108,7 +105,6 @@ def subject(cat):
     return render_template("subject.html", category=cat,
                            topics=topics, colors=COLORS.get(cat, {}))
 
-# ── Topic → question list ─────────────────────────────────────
 @app.route("/topic/<cat>/<path:topic>")
 def topic(cat, topic):
     u = get_user()
@@ -133,7 +129,6 @@ def topic(cat, topic):
     return render_template("topic.html", category=cat, topic=topic,
                            questions=questions, colors=COLORS.get(cat, {}))
 
-# ── Toggle API ────────────────────────────────────────────────
 @app.route("/toggle", methods=["POST"])
 def toggle():
     u = get_user()
@@ -154,8 +149,8 @@ def toggle():
             (val, u, qid)
         )
     else:
-        s = val if field == "solved"    else 0
-        r = val if field == "revision"  else 0
+        s = val if field == "solved"   else 0
+        r = val if field == "revision" else 0
         conn.execute(
             "INSERT INTO progress (user, question_id, solved, revision) VALUES (?,?,?,?)",
             (u, qid, s, r)
@@ -164,7 +159,6 @@ def toggle():
     conn.close()
     return jsonify({"ok": True})
 
-# ── Revision flow ─────────────────────────────────────────────
 @app.route("/revision")
 def revision():
     u = get_user()
@@ -224,6 +218,56 @@ def revision_topic(cat, topic):
     conn.close()
     return render_template("rev_topic.html", category=cat, topic=topic,
                            questions=questions, colors=COLORS.get(cat, {}))
+
+@app.route("/backup/download")
+def backup_download():
+    u = get_user()
+    if not u: return redirect(url_for("home"))
+    conn = db()
+    rows = conn.execute("SELECT * FROM progress WHERE user=?", (u,)).fetchall()
+    conn.close()
+    data = {
+        "user": u,
+        "exported_at": datetime.now().isoformat(),
+        "progress": [{"question_id": r["question_id"],
+                      "solved": r["solved"],
+                      "revision": r["revision"]} for r in rows]
+    }
+    return Response(
+        json.dumps(data, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition":
+                 f"attachment; filename={u}_backup_{datetime.now().strftime('%Y%m%d')}.json"}
+    )
+
+@app.route("/backup/restore", methods=["POST"])
+def backup_restore():
+    u = get_user()
+    if not u: return redirect(url_for("home"))
+    file = request.files.get("backup_file")
+    if not file: return "No file uploaded", 400
+    data = json.loads(file.read())
+    if data.get("user") != u:
+        return "❌ This backup belongs to a different user!", 400
+    conn = db()
+    for item in data["progress"]:
+        ex = conn.execute(
+            "SELECT 1 FROM progress WHERE user=? AND question_id=?",
+            (u, item["question_id"])
+        ).fetchone()
+        if ex:
+            conn.execute(
+                "UPDATE progress SET solved=?, revision=? WHERE user=? AND question_id=?",
+                (item["solved"], item["revision"], u, item["question_id"])
+            )
+        else:
+            conn.execute(
+                "INSERT INTO progress VALUES (?,?,?,?)",
+                (u, item["question_id"], item["solved"], item["revision"])
+            )
+    conn.commit()
+    conn.close()
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
