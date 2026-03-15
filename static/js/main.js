@@ -34,3 +34,21 @@ function showToast(msg) {
     clearTimeout(_toast);
     _toast = setTimeout(() => t.classList.remove('show'), 2000);
 }
+
+function restoreBackup(input) {
+    if (!input.files[0]) return;
+    if (!confirm('Overwrite current progress with this backup?')) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/backup/restore';
+    form.enctype = 'multipart/form-data';
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'backup_file';
+    const dt = new DataTransfer();
+    dt.items.add(input.files[0]);
+    fileInput.files = dt.files;
+    form.appendChild(fileInput);
+    document.body.appendChild(form);
+    form.submit();
+}
