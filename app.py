@@ -246,25 +246,19 @@ def backup_restore():
     if not u: return redirect(url_for("home"))
     file = request.files.get("backup_file")
     if not file: return "No file uploaded", 400
-    data = json.loads(file.read())
+    try:
+        data = json.loads(file.read())
+    except:
+        return "❌ Invalid JSON file", 400
     if data.get("user") != u:
-        return "❌ This backup belongs to a different user!", 400
+        return f"❌ Backup is for '{data.get('user')}' but you are logged in as '{u}'!", 400
     conn = db()
+    conn.execute("DELETE FROM progress WHERE user=?", (u,))
     for item in data["progress"]:
-        ex = conn.execute(
-            "SELECT 1 FROM progress WHERE user=? AND question_id=?",
-            (u, item["question_id"])
-        ).fetchone()
-        if ex:
-            conn.execute(
-                "UPDATE progress SET solved=?, revision=? WHERE user=? AND question_id=?",
-                (item["solved"], item["revision"], u, item["question_id"])
-            )
-        else:
-            conn.execute(
-                "INSERT INTO progress VALUES (?,?,?,?)",
-                (u, item["question_id"], item["solved"], item["revision"])
-            )
+        conn.execute(
+            "INSERT INTO progress (user, question_id, solved, revision) VALUES (?,?,?,?)",
+            (u, item["question_id"], item["solved"], item["revision"])
+        )
     conn.commit()
     conn.close()
     return redirect(url_for("dashboard"))
