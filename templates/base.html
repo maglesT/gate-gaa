@@ -13,6 +13,11 @@
     <div class="nav-right">
         <a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">📊 Dashboard</a>
         <a href="/revision"  class="nav-link {% if 'revision' in request.endpoint %}active{% endif %}">🔖 Revision</a>
+        <a href="/backup/download" class="nav-link">⬇️ Backup</a>
+        <label class="nav-link" style="cursor:pointer">
+            ⬆️ Restore
+            <input type="file" accept=".json" style="display:none" onchange="restoreBackup(this)">
+        </label>
         <span class="nav-pill">{{ session.user | capitalize }}</span>
         <a href="/logout" class="nav-link danger">↩ Switch</a>
     </div>
